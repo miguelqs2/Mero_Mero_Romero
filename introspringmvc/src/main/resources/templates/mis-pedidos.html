@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Pedidos - Seguimiento</title>
+    <style>
+        body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f9;padding:20px;margin:0}
+        .container{max-width:1000px;margin:auto;background:white;padding:30px;border-radius:10px;box-shadow:0 4px 10px #0001}
+        .header-panel{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;border-bottom:3px solid #8e44ad;padding-bottom:15px;margin-bottom:20px}
+        .header-panel h2{margin:0;color:#8e44ad}
+        .btn-volver{background:#34495e;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;font-weight:bold}
+        .tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+        .tab{padding:10px 18px;border:0;border-radius:6px;background:#ddd;cursor:pointer;font-weight:bold}
+        .tab.active{background:#8e44ad;color:white}
+        .panel{display:none}.panel.active{display:block}
+        .grid-pedidos{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
+        .card-pedido{background:#fff;border:1px solid #ddd;border-radius:8px;padding:20px;box-shadow:0 2px 5px #0000000d}
+        .card-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:15px;gap:10px}
+        
+        .mesa-container { display: flex; align-items: baseline; gap: 8px; }
+        .numero-pedido { font-size: 1.3em; font-weight: bold; color: #2c3e50; }
+        .mesa { font-size: 1.1em; font-weight: bold; color: #7f8c8d; }
+        
+        .estado-badge{padding:6px 12px;border-radius:20px;font-size:.8em;font-weight:bold;color:white}
+        .estado-EN-PROCESO{background:#3498db}
+        .estado-SERVIDO{background:#9b59b6}
+        .estado-REALIZADO{background:#27ae60}
+
+        ul{list-style:none;padding:0;margin:0}
+        li{padding:10px 0;border-bottom:1px dashed #eee;color:#333; display: flex; justify-content: space-between; align-items: center;}
+        .total{margin-top:15px;text-align:right;font-weight:bold;color:#27ae60;font-size:1.2em;}
+        .vacio{text-align:center;padding:35px;color:#7f8c8d}
+        
+        .btn-cobrar {
+            width: 100%; margin-top: 15px; padding: 12px; background: #27ae60; color: white; 
+            border: none; border-radius: 6px; font-weight: bold; font-size: 1em; cursor: pointer; transition: 0.2s;
+        }
+        .btn-cobrar:hover { background: #2ecc71; }
+        .btn-deshabilitado { background-color: #DBDBDB; color: #949494; cursor: not-allowed; }
+        .btn-deshabilitado:hover { background-color: #DBDBDB; }
+
+        .indicador-estado {
+            font-size: 0.7em; padding: 4px 10px; border-radius: 12px;
+            font-weight: bold; color: white; text-transform: uppercase; white-space: nowrap;
+        }
+        .ind-PENDIENTE { background: #f39c12; }
+        .ind-EN-PROCESO { background: #3498db; }
+        .ind-SERVIDO { background: #9b59b6; }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); position: relative;
+        }
+        .btn-cerrar-modal {
+            position: absolute; top: 15px; right: 15px; background: #e2e8f0; border: none; 
+            width: 30px; height: 30px; border-radius: 50%; font-weight: bold; color: #64748b; 
+            cursor: pointer; font-size: 1.2em; display: flex; justify-content: center; align-items: center;
+        }
+        
+        .modal-content h3 { margin-top: 0; color: #1e293b; font-size: 1.4em; margin-bottom: 5px;}
+        .modal-content .monto { font-size: 1.1em; color: #64748b; margin-bottom: 25px; font-weight: bold;}
+
+        .lista-pagos { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
+        .opcion-lista {
+            display: flex; align-items: center; gap: 15px; padding: 15px;
+            border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        .opcion-lista:hover { border-color: #8e44ad; background: #f8fafc; }
+        
+        .opcion-lista input[type="radio"] {
+            width: 20px; height: 20px; accent-color: #8e44ad; cursor: pointer; margin: 0;
+        }
+        
+        .texto-pago { font-size: 1.1em; font-weight: bold; color: #334155; display: flex; align-items: center; gap: 15px;}
+        .icono-imagen { width: 40px; height: 40px; object-fit: contain; border-radius: 5px; }
+        .icono-emoji { font-size: 2em; line-height: 1; }
+
+        .opcion-lista:has(input:checked) { border-color: #8e44ad; background: #f3e5f5; }
+
+        .btn-confirmar-lista {
+            width: 100%; padding: 15px; background: #2c3e50; color: white; border: none; 
+            border-radius: 6px; font-weight: bold; font-size: 1.1em; cursor: pointer;
+        }
+        .btn-confirmar-lista:hover { background: #1a252f; }
+
+        .qr-imagen {
+            width: 100%; max-width: 250px; height: auto; margin: 15px auto; 
+            display: block; border: 2px solid #e2e8f0; border-radius: 10px; padding: 10px;
+        }
+        .btn-confirmar-qr {
+            width: 100%; padding: 15px; background: #27ae60; color: white; border: none; 
+            border-radius: 6px; font-weight: bold; font-size: 1.1em; cursor: pointer;
+        }
+		
+		@media (max-width: 900px) {
+		    .header-bar { flex-direction: column; gap: 15px; padding: 20px; text-align: center; }
+		    .logo-y-mesera { flex-direction: column; gap: 10px; }
+		    .buscador { margin: 10px 0; width: 100%; max-width: 100%; }
+		    .buscador input { width: 100%; box-sizing: border-box; }
+		    .header-bar > div:last-child { width: 100%; justify-content: center; flex-wrap: wrap; }
+		    .tabla-wrapper { overflow-x: auto; } 
+		    .tabla-admin th, .tabla-admin td { padding: 10px 8px; font-size: 0.9em; white-space: nowrap; }
+		    .grid-pedidos { grid-template-columns: 1fr; } 
+		    .modal-content { padding: 20px; width: 95%; max-height: 90vh; overflow-y: auto; }
+		}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-panel">
+        <h2>Mis Pedidos: <span id="nombreMeseraTitulo" th:text="${nombreMesera}">Mesera</span></h2>
+        <a href="/menu" class="btn-volver">Volver al Menú</a>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab active" id="tab-activos" onclick="mostrarPanel('activos',this)">Activos</button>
+        <button class="tab" id="tab-terminados" onclick="mostrarPanel('terminados',this)">Terminados</button>
+    </div>
+    
+    <section id="activos" class="panel active">
+        <div th:if="${#lists.isEmpty(pedidosActivos)}" class="vacio">No tienes pedidos activos.</div>
+        
+        <div class="grid-pedidos" th:if="${not #lists.isEmpty(pedidosActivos)}">
+            <div th:each="pedido : ${pedidosActivos}" class="card-pedido">
+                <div class="card-header">
+                    <div class="mesa-container">
+                        <div class="numero-pedido" th:text="'#' + ${pedido.idPedido}">#0</div>
+                        <div class="mesa" th:text="'MESA ' + ${pedido.numeroMesa}">Mesa</div>
+                    </div>
+                    
+                    <span class="estado-badge estado-SERVIDO" th:if="${pedido.estado == 'SERVIDO'}">LISTO PARA COBRAR</span>
+                    <span class="estado-badge estado-EN-PROCESO" th:if="${pedido.estado == 'EN PROCESO'}">EN PREPARACIÓN</span>
+                </div>
+                
+                <div th:if="${notasPorMesa[pedido.numeroMesa] != null and !notasPorMesa[pedido.numeroMesa].isEmpty()}">
+                    <div th:each="nota, iterStat : ${notasPorMesa[pedido.numeroMesa]}" 
+                         style="background: #fff3e0; color: #e65100; padding: 10px; border-radius: 5px; font-weight: bold; margin-bottom: 5px; font-size: 0.95em; border-left: 4px solid #ff9800;">
+                        <strong th:text="'Nota ' + ${iterStat.count} + ':'"></strong> <span th:text="${nota}"></span>
+                    </div>
+                </div>
+
+                <ul>
+                    <li th:each="item : ${pedido.items}">
+                        <div>
+                            <strong th:text="${item.cantidad} + 'x '"></strong>
+                            <span th:text="${item.productoPrecio.producto.nombre}">Plato</span>
+                            <span th:if="${item.productoPrecio.tamano != 'Unico'}" 
+                                  th:text="' (' + ${item.productoPrecio.tamano} + ')'"
+                                  style="color:#3498db; font-size:0.9em;"></span>
+                        </div>
+                        
+                        <div>
+                            <span th:if="${estadosItems[item.id] == 'PENDIENTE'}" class="indicador-estado ind-PENDIENTE">Pendiente</span>
+                            <span th:if="${estadosItems[item.id] == 'EN PROCESO'}" class="indicador-estado ind-EN-PROCESO">En Proceso</span>
+                            <span th:if="${estadosItems[item.id] == 'SERVIDO'}" class="indicador-estado ind-SERVIDO">Servido</span>
+                        </div>
+                    </li>
+                </ul>
+                <div class="total" th:text="'Total: S/ ' + ${#numbers.formatDecimal(pedido.total, 1, 2)}">Total</div>
+                
+                <button type="button" class="btn-cobrar" th:if="${pedido.estado == 'SERVIDO'}" 
+                        th:onclick="abrirModalPago([[${pedido.numeroMesa}]], [[${pedido.total}]])">
+                    Cobrar y Cerrar Mesa
+                </button>
+
+                <button type="button" class="btn-cobrar btn-deshabilitado" th:if="${pedido.estado != 'SERVIDO'}" disabled>
+                    Cobrar y Cerrar Mesa
+                </button>
+            </div>
+        </div>
+    </section>
+    
+    <section id="terminados" class="panel">
+        <div th:if="${#lists.isEmpty(pedidosTerminados)}" class="vacio">Todavía no tienes pedidos terminados.</div>
+        
+        <div class="grid-pedidos" th:if="${not #lists.isEmpty(pedidosTerminados)}">
+            <div th:each="pedido : ${pedidosTerminados}" class="card-pedido">
+                <div class="card-header">
+                    <div class="mesa-container">
+                        <div class="numero-pedido" th:text="'#' + ${pedido.idPedido}">#0</div>
+                        <div class="mesa" th:text="'MESA ' + ${pedido.numeroMesa}">Mesa</div>
+                    </div>
+                    <span class="estado-badge estado-REALIZADO">PAGADO</span>
+                </div>
+                
+                <div th:if="${pedido.listaNotasSeparadas != null and !pedido.listaNotasSeparadas.isEmpty()}">
+                    <div th:each="nota, iterStat : ${pedido.listaNotasSeparadas}" 
+                         style="background: #fff3e0; color: #e65100; padding: 10px; border-radius: 5px; font-weight: bold; margin-bottom: 5px; font-size: 0.95em; border-left: 4px solid #ff9800;">
+                        <strong th:text="'Nota ' + ${iterStat.count} + ':'"></strong> <span th:text="${nota}"></span>
+                    </div>
+                </div>
+                
+                <ul>
+                    <li th:each="item : ${pedido.items}" style="display: block;">
+                        <strong th:text="${item.cantidad} + 'x '"></strong>
+                        <span th:text="${item.productoPrecio.producto.nombre}">Plato</span>
+                        <span th:if="${item.productoPrecio.tamano != 'Unico'}" 
+                              th:text="' (' + ${item.productoPrecio.tamano} + ')'"
+                              style="color:#3498db; font-size:0.9em;"></span>
+                    </li>
+                </ul>
+                <div class="total" th:text="'Total: S/ ' + ${#numbers.formatDecimal(pedido.total, 1, 2)}">Total</div>
+                <p style="color:#555;font-size:.9em" th:text="'Tiempo de preparación: ' + ${pedido.duracionPreparacion}">Tiempo</p>
+                <p style="color:#555;font-size:.9em; margin-top:5px;" th:if="${pedido.metodoPago != null}" 
+                   th:text="'Pagado con: ' + ${pedido.metodoPago}"></p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div id="modalPago" class="modal-overlay">
+    <div class="modal-content">
+        <button type="button" class="btn-cerrar-modal" onclick="cerrarModalPago()">✕</button>
+        
+        <h3>Elige un medio de pago</h3>
+        <p id="textoTotalModal" class="monto">Mesa 0 - S/ 0.00</p>
+        
+        <div id="formPago">
+            <input type="hidden" name="numeroMesa" id="inputMesaModal" value="" />
+            <input type="hidden" name="montoPago" id="inputMontoModal" value="" />
+            
+            <div class="lista-pagos">
+                <label class="opcion-lista">
+                    <input type="radio" name="metodoPago" value="Efectivo" checked onchange="verificarMetodoPago()">
+                    <div class="texto-pago">
+                        <div class="icono-emoji">💵</div>
+                        Efectivo
+                    </div>
+                </label>
+                
+                <label class="opcion-lista">
+                    <input type="radio" name="metodoPago" value="Yape" onchange="verificarMetodoPago()">
+                    <div class="texto-pago">
+                        <img src="/yape.png" class="icono-imagen" alt="Yape">
+                        Yape
+                    </div>
+                </label>
+                
+                <label class="opcion-lista">
+                    <input type="radio" name="metodoPago" value="Plin" onchange="verificarMetodoPago()">
+                    <div class="texto-pago">
+                        <img src="/plin.png" class="icono-imagen" alt="Plin">
+                        Plin
+                    </div>
+                </label>
+                
+                <label class="opcion-lista">
+                    <input type="radio" name="metodoPago" value="Tarjeta" onchange="verificarMetodoPago()">
+                    <div class="texto-pago">
+                        <div class="icono-emoji">💳</div>
+                        Tarjeta
+                    </div>
+                </label>
+            </div>
+            
+            <button type="button" class="btn-confirmar-lista" onclick="procesarPago()">Confirmar Pago</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalQR" class="modal-overlay" style="z-index: 1001;">
+    <div class="modal-content" style="text-align: center;">
+        <button type="button" class="btn-cerrar-modal" onclick="cerrarModalQR()">✕</button>
+        
+        <h3 id="tituloQR">Paga con Yape</h3>
+        <p id="textoMontoQR" class="monto">Monto: S/ 0.00</p>
+        
+        <img id="imagenQR" src="" class="qr-imagen" alt="Código QR">
+        
+        <button type="button" class="btn-confirmar-qr" onclick="pagarConQR()">Confirmar Pago</button>
+    </div>
+</div>
+
+<script>
+    let mesaActual = 0;
+    let montoActual = 0;
+
+    window.onload = function() {
+        let urlParams = new URLSearchParams(window.location.search);
+        let meseraUrl = urlParams.get('mesera');
+        let nombreEnPantalla = document.getElementById("nombreMeseraTitulo").innerText;
+        
+        let meseraGuardada = localStorage.getItem("meseraSeleccionada");
+        
+        if (meseraGuardada && (nombreEnPantalla === "No identificada" || meseraUrl === null)) {
+            window.location.href = "/mis-pedidos?mesera=" + encodeURIComponent(meseraGuardada);
+            return;
+        }
+        
+        if (meseraGuardada) {
+            document.getElementById("nombreMeseraTitulo").innerText = meseraGuardada;
+        }
+
+        let pestanaActiva = localStorage.getItem('pestanaMisPedidos');
+        if (pestanaActiva === 'terminados') {
+            document.getElementById('tab-terminados').click();
+        }
+    };
+
+    function mostrarPanel(id,boton){
+        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        boton.classList.add('active');
+        localStorage.setItem('pestanaMisPedidos', id);
+    }
+
+    function abrirModalPago(mesa, total) {
+        document.getElementById('modalPago').style.display = 'flex';
+        mesaActual = mesa;
+        montoActual = total;
+        
+        document.getElementById('inputMesaModal').value = mesa;
+        document.getElementById('inputMontoModal').value = total;
+        document.getElementById('textoTotalModal').innerText = `Mesa ${mesa} - Total: S/ ${total.toFixed(2)}`;
+        
+        document.querySelector('input[name="metodoPago"][value="Efectivo"]').checked = true;
+    }
+
+    function cerrarModalPago() {
+        document.getElementById('modalPago').style.display = 'none';
+    }
+
+    function verificarMetodoPago() {
+        let radio = document.querySelector('input[name="metodoPago"]:checked');
+        if (radio.value === "Yape" || radio.value === "Plin") {
+            abrirModalQR(radio.value);
+        }
+    }
+
+    function abrirModalQR(metodo) {
+        document.getElementById('modalQR').style.display = 'flex';
+        document.getElementById('tituloQR').innerText = `Paga con ${metodo}`;
+        document.getElementById('textoMontoQR').innerText = `Monto: S/ ${montoActual.toFixed(2)}`;
+        
+        if (metodo === "Yape") {
+            document.getElementById('imagenQR').src = "/qr_yape.png";
+        } else {
+            document.getElementById('imagenQR').src = "/qr_plin.png";
+        }
+    }
+
+    function cerrarModalQR() {
+        document.getElementById('modalQR').style.display = 'none';
+        document.getElementById('modalPago').style.display = 'flex';
+    }
+
+    function procesarPago() {
+        let radio = document.querySelector('input[name="metodoPago"]:checked');
+        if (radio.value === "Yape" || radio.value === "Plin") {
+            abrirModalQR(radio.value);
+        } else {
+            enviarFormulario(radio.value);
+        }
+    }
+
+    function pagarConQR() {
+        let radio = document.querySelector('input[name="metodoPago"]:checked');
+        enviarFormulario(radio.value);
+    }
+
+    function enviarFormulario(metodo) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/cobrarMesa';
+        
+        const inputMesa = document.createElement('input');
+        inputMesa.type = 'hidden';
+        inputMesa.name = 'numeroMesa';
+        inputMesa.value = mesaActual;
+        
+        const inputMetodo = document.createElement('input');
+        inputMetodo.type = 'hidden';
+        inputMetodo.name = 'metodoPago';
+        inputMetodo.value = metodo;
+        
+        form.appendChild(inputMesa);
+        form.appendChild(inputMetodo);
+        document.body.appendChild(form);
+        
+        let meseraGuardada = localStorage.getItem("meseraSeleccionada");
+        if(meseraGuardada) {
+            form.action = "/cobrarMesa?mesera=" + encodeURIComponent(meseraGuardada);
+        }
+        
+        form.submit();
+    }
+
+    setInterval(() => {
+        const modalPago = document.getElementById('modalPago').style.display;
+        const modalQR = document.getElementById('modalQR').style.display;
+        
+        if (modalPago !== 'flex' && modalQR !== 'flex') {
+            location.reload();
+        }
+    }, 10000); 
+</script>
+</body>
+</html>

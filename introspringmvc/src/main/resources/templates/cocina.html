@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Mero Mero Romero - Cocina</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #e0f7fa; padding: 20px; margin: 0; display: flex; justify-content: center; height: 100vh; box-sizing: border-box;}
+        .container { width: 100%; max-width: 1200px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden;}
+        .header { text-align: center; margin-bottom: 25px; border-bottom: 4px solid #01579b; padding-bottom: 15px; flex-shrink: 0;}
+        .header h1 { margin: 0; color: #01579b; font-size: 2.5em; text-transform: uppercase; }
+        .header p { color: #d32f2f; font-weight: bold; font-size: 1.2em; margin-top: 5px;}
+        .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; flex-shrink: 0;}
+        .tab-btn { padding: 12px 25px; background: #b0bec5; border: none; border-radius: 8px 8px 0 0; font-size: 1.1em; font-weight: bold; color: white; cursor: pointer; transition: 0.3s; outline: none;}
+        .tab-btn:hover { background: #78909c; }
+        .tab-btn.active { background: #01579b; color: white; border-bottom: 2px solid #01579b;}
+        .tab-content { display: none; }
+        .tab-content.active { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
+        .scroll-pedidos { overflow-y: auto; padding-right: 10px; flex-grow: 1; }
+        .grid-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .card-pedido { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-top: 8px solid #f39c12; border: 1px solid #ddd;}
+        .card-pedido.EN-PROCESO { border-top-color: #0277bd; }
+        .card-pedido.REALIZADO { border-top-color: #43a047; opacity: 0.7;}
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #ccc; padding-bottom: 10px; margin-bottom: 15px;}
+        .mesa { font-size: 1.8em; font-weight: 900; color: #d32f2f; }
+        .mesera { font-size: 0.9em; color: #555; font-weight: bold; }
+        .estado-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; color: white; text-transform: uppercase;}
+        .estado-PENDIENTE { background: #f39c12; }
+        .estado-EN-PROCESO { background: #0277bd; }
+        .estado-SERVIDO { background: #9b59b6; }
+        .estado-REALIZADO { background: #43a047; }
+        
+        ul { list-style: none; padding: 0; margin: 0 0 15px 0; }
+        li { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-size: 1.1em;}
+        li strong { color: #01579b; font-size: 1.2em;}
+        
+        .acciones { display: flex; gap: 10px; margin-top: 15px;}
+        .btn-accion { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; font-size: 1em; }
+        .btn-proceso { background: #0277bd; }
+        .btn-realizado { background: #43a047; }
+        .btn-deshabilitado { background: #bdc3c7; cursor: not-allowed; }
+        .tabla-wrapper { flex-grow: 1; overflow-y: auto; border-radius: 8px;}
+        .tabla-admin { width: 100%; border-collapse: collapse; background: white; margin-top: 10px;}
+        .tabla-admin th, .tabla-admin td { padding: 15px; border-bottom: 1px solid #ddd; text-align: left; }
+        .tabla-admin th { background: #01579b; color: white; text-transform: uppercase; font-size: 0.95em; position: sticky; top: 0; z-index: 10;}
+        .input-stock { width: 80px; padding: 8px; text-align: center; font-weight: bold; border: 1px solid #ccc; border-radius: 4px; }
+        .select-estado { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
+        .btn-actualizar { background: #43a047; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        
+        /* ESTILO DEL BUSCADOR */
+        .buscador-container {
+            margin-bottom: 15px; 
+            display: flex; 
+            justify-content: flex-end;
+        }
+        .buscador-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            outline: none;
+            font-size: 1em;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            transition: 0.3s;
+        }
+        .buscador-input:focus {
+            border-color: #0277bd;
+            box-shadow: 0 0 8px rgba(2, 119, 189, 0.3);
+        }
+		
+		
+		@media (max-width: 900px) {
+		    
+		    .header-bar { flex-direction: column; gap: 15px; padding: 20px; text-align: center; }
+		    .logo-y-mesera { flex-direction: column; gap: 10px; }
+		    .buscador { margin: 10px 0; width: 100%; max-width: 100%; }
+		    .buscador input { width: 100%; box-sizing: border-box; }
+		    
+		    
+		    .header-bar > div:last-child { width: 100%; justify-content: center; flex-wrap: wrap; }
+		    
+		    
+		    .tabla-wrapper { overflow-x: auto; }
+		    .tabla-admin th, .tabla-admin td { padding: 10px 8px; font-size: 0.9em; white-space: nowrap; }
+		    
+		    
+		    .grid-pedidos { grid-template-columns: 1fr; } 
+		    
+		    
+		    .modal-content { padding: 20px; width: 95%; max-height: 90vh; overflow-y: auto; }
+		}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cocina - Mero Mero Romero</h1>
+            <p>El placer de disfrutar</p>
+        </div>
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="cambiarPestana('pedidos', this)">Pedidos de Meseras</button>
+            <button class="tab-btn" onclick="cambiarPestana('inventario', this)">Control de Platos</button>
+            <button class="tab-btn" onclick="cambiarPestana('historial', this); cargarHistorial();">Historial</button>
+        </div>
+        
+        <div id="pedidos" class="tab-content active">
+            <div class="scroll-pedidos">
+                <div id="contenedor-pedidos" class="grid-pedidos"></div>
+            </div>
+        </div>
+        
+        <div id="historial" class="tab-content">
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin:10px 0;">
+                <label>Fecha<br><input type="date" id="filtro-fecha" class="select-estado"></label>
+                <label>Mesa<br><select id="filtro-mesa" class="select-estado"><option value="0">Todas las mesas</option></select></label>
+                <label>Mesera<br><select id="filtro-mesera" class="select-estado"><option value="">Todas las meseras</option></select></label>
+                <button type="button" class="btn-actualizar" onclick="cargarHistorial()">Filtrar</button>
+            </div>
+            <div class="tabla-wrapper">
+                <table class="tabla-admin">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Mesa</th>
+                            <th>Mesera</th>
+                            <th>Platos</th>
+                            <th>Total</th>
+                            <th>Pago</th>
+                            <th>Hora de finalización</th>
+                            <th>Tiempo de preparación</th>
+                        </tr>
+                    </thead>
+                    <tbody id="filas-historial"><tr><td colspan="8">Cargando historial...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="inventario" class="tab-content">
+            <div class="buscador-container">
+                <input type="text" id="buscadorInventario" class="buscador-input" placeholder="Buscar producto" onkeyup="filtrarInventario()">
+            </div>
+            
+            <div class="tabla-wrapper">
+                <table class="tabla-admin" id="tablaInventario">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Tamaño</th>
+                            <th>Estado Actual</th>
+                            <th>Stock Actual</th>
+                            <th>Modificar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="pp : ${listaPlatos}" class="fila-inventario" th:attr="data-nombre=${pp.producto.nombre}">
+                            <td><strong th:text="${pp.producto.nombre}">Producto</strong></td>
+                            <td th:text="${pp.producto.categoria.nombre}">Categoría</td>
+                            <td th:text="${pp.tamano}">Tamaño</td>
+                            <td>
+                                <span th:text="${pp.estado}" th:style="${pp.estado == 'AGOTADO' ? 'color:#d32f2f; font-weight:bold;' : 'color:#43a047; font-weight:bold;'}">Estado</span>
+                            </td>
+                            <td th:text="${pp.stock}" style="font-weight:bold; font-size:1.2em; color:#01579b;">0</td>
+                            <td>
+                                <form th:action="@{/actualizarPlato}" method="post" style="display:flex; gap:10px; align-items:center; margin: 0;">
+                                    <input type="hidden" name="idPrecio" th:value="${pp.idPrecio}" />
+                                    <input type="number" name="nuevoStock" th:value="${pp.stock}" min="0" class="input-stock" required>
+                                    <select name="nuevoEstado" class="select-estado">
+                                        <option value="DISPONIBLE" th:selected="${pp.estado == 'DISPONIBLE'}">DISPONIBLE</option>
+                                        <option value="AGOTADO" th:selected="${pp.estado == 'AGOTADO'}">AGOTADO</option>
+                                    </select>
+                                    <button type="submit" class="btn-actualizar">Actualizar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function cambiarPestana(idPestana, boton) {
+            var contenidos = document.getElementsByClassName('tab-content');
+            for (var i = 0; i < contenidos.length; i++) contenidos[i].classList.remove('active');
+            var botones = document.getElementsByClassName('tab-btn');
+            for (var i = 0; i < botones.length; i++) botones[i].classList.remove('active');
+            
+            document.getElementById(idPestana).classList.add('active');
+            boton.classList.add('active');
+            
+            
+            localStorage.setItem('pestanaCocina', idPestana);
+        }
+
+        function filtrarInventario() {
+            var filtro = document.getElementById("buscadorInventario").value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            var filas = document.getElementsByClassName("fila-inventario");
+
+            for (var i = 0; i < filas.length; i++) {
+                var nombre = filas[i].getAttribute("data-nombre").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (nombre.startsWith(filtro)) {
+                    filas[i].style.display = "";
+                } else {
+                    filas[i].style.display = "none";
+                }
+            }
+        }
+
+        function cargarHistorial() {
+            const mesa = document.getElementById('filtro-mesa').value;
+            const mesera = document.getElementById('filtro-mesera').value;
+            const fechaInput = document.getElementById('filtro-fecha');
+            const fecha = fechaInput.value || new Date().toISOString().split('T')[0];
+
+            fetch(`/api/historial-pedidos?mesa=${encodeURIComponent(mesa)}&mesera=${encodeURIComponent(mesera)}&fecha=${fecha}`)
+                .then(r => r.json()).then(pedidos => {
+                    const tbody = document.getElementById('filas-historial');
+                    const mesaSelect = document.getElementById('filtro-mesa');
+                    const meseraSelect = document.getElementById('filtro-mesera');
+                    const mesaActual = mesaSelect.value, meseraActual = meseraSelect.value;
+                    const mesas = [...new Set(pedidos.map(p => p.numeroMesa))].sort((a,b) => a-b);
+                    const meseras = [...new Set(pedidos.map(p => p.nombreMesera))].sort();
+                    
+                    if (mesaSelect.options.length === 1) mesas.forEach(m => mesaSelect.add(new Option('Mesa ' + m, m)));
+                    if (meseraSelect.options.length === 1) meseras.forEach(m => meseraSelect.add(new Option(m, m)));
+                    
+                    mesaSelect.value = mesaActual; 
+                    meseraSelect.value = meseraActual;
+                    
+                    if (!pedidos.length) { 
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">No hay pedidos realizados en esa fecha con esos filtros.</td></tr>'; 
+                        return; 
+                    }
+                    
+                    tbody.innerHTML = pedidos.map(p => {
+                        const platos = p.items.map(i => {
+                            let nombre = "Producto";
+                            let tamano = "";
+                            if (i.productoPrecio && i.productoPrecio.producto) {
+                                nombre = i.productoPrecio.producto.nombre;
+                                tamano = i.productoPrecio.tamano !== 'Unico' ? ` (${i.productoPrecio.tamano})` : '';
+                            }
+                            return `${i.cantidad}x ${nombre}${tamano}`;
+                        }).join(', ');
+                        const hora = p.fechaHoraRealizado ? new Date(p.fechaHoraRealizado).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-';
+                        
+                        return `<tr>
+                            <td>#${p.idPedido}</td>
+                            <td>Mesa ${p.numeroMesa}</td>
+                            <td>${p.nombreMesera}</td>
+                            <td>${platos}</td>
+                            <td>S/ ${Number(p.total).toFixed(2)}</td>
+                            <td><strong>${p.metodoPago || 'Efectivo'}</strong></td>
+                            <td>${hora}</td>
+                            <td>${p.duracionPreparacion}</td>
+                        </tr>`;
+                    }).join('');
+                }).catch(() => document.getElementById('filas-historial').innerHTML = '<tr><td colspan="8">No se pudo cargar el historial.</td></tr>');
+        }
+
+        function cargarPedidos() {
+            fetch('/api/pedidos-activos')
+                .then(response => response.json())
+                .then(pedidos => {
+                    var contenedor = document.getElementById('contenedor-pedidos');
+					if (pedidos.length === 0) {
+					    contenedor.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #7f8c8d; padding: 40px; font-size: 1.2em; font-weight: bold;">No hay pedidos nuevos por el momento.</div>';
+					    return;
+					}
+                    let html = '';
+                    pedidos.forEach(p => {
+                        let estadoClass = p.estado.replace(' ', '-');
+                        html += `<div class="card-pedido ${estadoClass}">`;
+                        html += `<div class="card-header">`;
+                        
+                        html += `<div>
+                                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                                        <div style="font-size: 1.8em; font-weight: 900; color: #2c3e50;">#${p.idPedido}</div>
+                                        <div class="mesa">MESA ${p.numeroMesa}</div>
+                                     </div>
+                                     <div class="mesera">Atendió: ${p.nombreMesera}</div>
+                                 </div>`;
+                                 
+                        html += `<div><span class="estado-badge estado-${estadoClass}">${p.estado}</span></div>`;
+                        html += `</div>`;
+                        
+                        if (p.observaciones && p.observaciones.trim() !== "") {
+                            html += `<div style="background: #fff3e0; color: #e65100; padding: 10px; border-radius: 5px; font-weight: bold; margin-bottom: 15px; font-size: 0.95em; border-left: 4px solid #ff9800;">
+                                         <strong>Nota:</strong> ${p.observaciones}
+                                     </div>`;
+                        }
+
+                        html += `<ul>`;
+                        p.items.forEach(item => {
+                            let nombre = "Producto";
+                            let tamano = "";
+                            if (item.productoPrecio && item.productoPrecio.producto) {
+                                nombre = item.productoPrecio.producto.nombre;
+                                tamano = item.productoPrecio.tamano !== 'Unico' ? ` (${item.productoPrecio.tamano})` : '';
+                            } else if (item.productoPrecio) {
+                                nombre = "Plato ID: " + item.productoPrecio.idPrecio;
+                            }
+                            html += `<li><span><strong>${item.cantidad}x</strong> ${nombre}${tamano}</span></li>`;
+                        });
+                        
+                        html += `</ul><div class="acciones">`;
+                        if (p.estado === 'PENDIENTE') {
+                            html += `<form action="/cambiarEstado" method="post" style="width:100%; margin:0;">
+                                        <input type="hidden" name="idPedido" value="${p.idPedido}" />
+                                        <input type="hidden" name="nuevoEstado" value="EN PROCESO" />
+                                        <button type="submit" class="btn-accion btn-proceso">Empezar a Cocinar</button>
+                                     </form>`;
+                        } else if (p.estado === 'EN PROCESO') {
+                            html += `<form action="/cambiarEstado" method="post" style="width:100%; margin:0;">
+                                        <input type="hidden" name="idPedido" value="${p.idPedido}" />
+                                        <input type="hidden" name="nuevoEstado" value="SERVIDO" />
+                                        <button type="submit" class="btn-accion btn-realizado">Pedido Servido</button>
+                                     </form>`;
+                        } else {
+                            html += `<button class="btn-accion btn-deshabilitado" disabled>Completado</button>`;
+                        }
+                        html += `</div></div>`;
+                    });
+                    contenedor.innerHTML = html;
+                })
+                .catch(error => console.error("Error cargando pedidos:", error));
+        }
+
+        cargarPedidos();
+        setInterval(cargarPedidos, 3000);
+
+        setInterval(() => {
+            if (document.getElementById('inventario').classList.contains('active')) {
+                fetch('/api/platos')
+                    .then(res => res.json())
+                    .then(lista => {
+                        lista.forEach(pp => {
+                            const inputId = document.querySelector(`input[name="idPrecio"][value="${pp.idPrecio}"]`);
+                            if (inputId) {
+                                const fila = inputId.closest('tr');
+                                const inputStock = fila.querySelector('input[name="nuevoStock"]');
+                                if (document.activeElement !== inputStock) {
+                                    fila.querySelector('td:nth-child(5)').innerText = pp.stock;
+                                    inputStock.value = pp.stock;
+                                }
+                            }
+                        });
+                    }).catch(err => console.error("Error actualizando stock:", err));
+            }
+        }, 3000);
+
+       
+        document.addEventListener("DOMContentLoaded", function() {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('filtro-fecha').value = hoy;
+
+            let pestanaGuardada = localStorage.getItem('pestanaCocina');
+            
+            if (pestanaGuardada && pestanaGuardada !== 'pedidos') {
+                if (pestanaGuardada === 'historial') {
+                    let botonHistorial = document.querySelectorAll('.tab-btn')[2];
+                    cambiarPestana('historial', botonHistorial);
+                    cargarHistorial(); 
+                } else if (pestanaGuardada === 'inventario') {
+                    let botonInventario = document.querySelectorAll('.tab-btn')[1];
+                    cambiarPestana('inventario', botonInventario);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

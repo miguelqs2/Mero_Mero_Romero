@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mero Mero Romero - Carrito</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #e0f7fa; padding: 20px; margin: 0;}
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-top: 10px solid #0277bd;}
+        h2 { color: #01579b; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 15px 10px; border-bottom: 1px solid #ddd; text-align: left; vertical-align: middle;}
+        th { background: #0277bd; color: white; text-transform: uppercase; font-size: 0.9em;}
+        
+        .observaciones-container { margin-bottom: 20px; }
+        .observaciones-container label { font-weight: bold; color: #01579b; display: block; margin-bottom: 8px; }
+        .observaciones-container textarea {
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px;
+            font-family: inherit; font-size: 1em; resize: vertical; outline: none;
+            box-sizing: border-box; transition: 0.3s;
+        }
+        .observaciones-container textarea:focus { border-color: #0277bd; box-shadow: 0 0 8px rgba(2, 119, 189, 0.2); }
+
+        .total { text-align: right; font-size: 1.5em; font-weight: bold; color: #d32f2f; margin-top: 20px; background: #ffebee; padding: 15px; border-radius: 8px;}
+        
+        .btn { padding: 12px 20px; text-decoration: none; border-radius: 5px; color: white; display: inline-block; border: none; cursor: pointer; font-weight: bold; transition: 0.2s;}
+        .btn-pagar { background: #43a047; box-shadow: 0 3px 0 #2e7d32;}
+        .btn-pagar:hover { background: #4caf50; }
+        .btn-vaciar { background: #d32f2f; box-shadow: 0 3px 0 #9a0007;}
+        .btn-vaciar:hover { background: #f44336; }
+        
+        .controles-cantidad { display: flex; align-items: center; gap: 10px; }
+        .btn-cantidad { background: #0277bd; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-cantidad:hover { background: #01579b; }
+        .btn-eliminar { background: transparent; color: #d32f2f; border: 1px solid #d32f2f; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-eliminar:hover { background: #ffebee; }
+        
+        .form-confirmar { display: flex; gap: 15px; align-items: center; background: #e0f7fa; padding: 20px; border-radius: 8px; border: 1px solid #b2ebf2;}
+        .form-confirmar select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; font-weight: bold; outline: none;}
+        .tamano-texto { color: #0277bd; font-size: 0.9em; font-weight: bold; }
+
+        .mensaje-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.1em;
+        }
+		
+
+		@media (max-width: 900px) {
+		   
+		    .header-bar { flex-direction: column; gap: 15px; padding: 20px; text-align: center; }
+		    .logo-y-mesera { flex-direction: column; gap: 10px; }
+		    .buscador { margin: 10px 0; width: 100%; max-width: 100%; }
+		    .buscador input { width: 100%; box-sizing: border-box; }
+		    
+		   
+		    .header-bar > div:last-child { width: 100%; justify-content: center; flex-wrap: wrap; }
+		    
+		  
+		    .tabla-wrapper { overflow-x: auto; }
+		    .tabla-admin th, .tabla-admin td { padding: 10px 8px; font-size: 0.9em; white-space: nowrap; }
+		    
+		    
+		    .grid-pedidos { grid-template-columns: 1fr; } 
+		    
+		   
+		    .modal-content { padding: 20px; width: 95%; max-height: 90vh; overflow-y: auto; }
+		}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Detalle del Pedido</h2>
+
+        <div th:if="${errorMesa}" class="mensaje-error">
+             <span th:text="${errorMesa}">Error</span>
+        </div>
+
+        <table th:if="${not #lists.isEmpty(carrito)}">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Precio Un.</th>
+                    <th>Cantidad</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${carrito}">
+                    <td>
+                        <strong th:text="${item.productoPrecio.producto.nombre}" style="color:#01579b;">Producto</strong>
+                        <div class="tamano-texto" th:text="${item.productoPrecio.tamano}">Tamaño</div>
+                    </td>
+                    <td th:text="'S/ ' + ${item.productoPrecio.precio}">Precio</td>
+                    <td>
+                        <div class="controles-cantidad">
+                            
+                            <form th:action="@{/disminuir}" method="post" style="margin:0;" onsubmit="guardarTemporales()">
+                                <input type="hidden" name="idPrecio" th:value="${item.productoPrecio.idPrecio}" />
+                                <button type="submit" class="btn-cantidad">-</button>
+                            </form>
+                            <strong th:text="${item.cantidad}" style="font-size: 1.2em;">1</strong>
+                            <form th:action="@{/aumentar}" method="post" style="margin:0;" onsubmit="guardarTemporales()">
+                                <input type="hidden" name="idPrecio" th:value="${item.productoPrecio.idPrecio}" />
+                                <button type="submit" class="btn-cantidad">+</button>
+                            </form>
+                        </div>
+                    </td>
+                    <td th:text="'S/ ' + ${item.subtotal}" style="font-weight:bold; color:#43a047;">S/ 0.00</td>
+                    <td>
+                        <form th:action="@{/eliminar}" method="post" style="margin:0;" onsubmit="guardarTemporales()">
+                            <input type="hidden" name="idPrecio" th:value="${item.productoPrecio.idPrecio}" />
+                            <button type="submit" class="btn-eliminar">Quitar</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 th:if="${#lists.isEmpty(carrito)}" style="text-align:center; color:#777;">El carrito está vacío. <a href="/menu" style="color:#d32f2f;">Volver al menú</a></h3>
+
+        <div th:if="${not #lists.isEmpty(carrito)}">
+            <form action="/confirmar" method="post" onsubmit="guardarMesaLocal()">
+                
+                <div class="observaciones-container">
+                    <label for="observaciones">Especificaciones o excepciones del pedido:</label>
+                    
+                    <textarea id="observaciones" name="observaciones" rows="3" 
+                              placeholder="Ej: Sin cebolla, para llevar, etc."
+                              onkeyup="guardarTemporales()"
+                              th:text="${observacionesTemp}"></textarea>
+                </div>
+
+                <p class="total" th:text="'TOTAL A PAGAR: S/ ' + ${total}">Total</p>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    <a href="/vaciar" class="btn btn-vaciar" onclick="limpiarMemoria()">Vaciar Carrito</a>
+                    
+                    <div class="form-confirmar">
+                        <label for="mesa" style="font-weight: bold; color: #01579b; font-size: 1.1em;">Mesa N°:</label>
+                       
+                        <select name="mesa" id="mesa" required onchange="guardarTemporales()">
+                            <option value="" disabled th:selected="${mesaSeleccionadaTemp == null}">-- Seleccione --</option>
+                            <option th:each="m : ${mesas}" th:value="${m}" th:text="'Mesa ' + ${m}" 
+                                    th:selected="${mesaSeleccionadaTemp != null && mesaSeleccionadaTemp == m}">Mesa</option>
+                        </select>
+
+                        <input type="hidden" name="cliente" id="meseraInput" value="Mesera" />
+                        <button type="submit" class="btn btn-pagar">Confirmar Pedido</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        
+        function guardarTemporales() {
+            var obs = document.getElementById("observaciones").value;
+            var mesa = document.getElementById("mesa").value;
+            
+            localStorage.setItem("observacionTemp", obs);
+            localStorage.setItem("mesaTemp", mesa);
+        }
+
+        
+        function limpiarMemoria() {
+            localStorage.removeItem("observacionTemp");
+            localStorage.removeItem("mesaTemp");
+        }
+
+        function guardarMesaLocal() {
+            var mesera = localStorage.getItem("meseraSeleccionada");
+            if (mesera) {
+                document.getElementById("meseraInput").value = mesera;
+            } else {
+                document.getElementById("meseraInput").value = "Maria";
+            }
+            
+           
+            limpiarMemoria();
+        }
+
+        
+        window.onload = function() {
+            var obsGuardada = localStorage.getItem("observacionTemp");
+            if (obsGuardada) {
+                document.getElementById("observaciones").value = obsGuardada;
+            }
+
+            var mesaGuardada = localStorage.getItem("mesaTemp");
+            if (mesaGuardada && mesaGuardada !== "") {
+                document.getElementById("mesa").value = mesaGuardada;
+            }
+        };
+    </script>
+</body>
+</html>

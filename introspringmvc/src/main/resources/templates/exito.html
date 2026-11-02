@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pedido Exitoso</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial; display: flex; justify-content: center; align-items: center; height: 100vh; background: #ecf0f1; margin:0;}
+        .card { background: white; padding: 40px; border-radius: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); max-width: 400px; overflow-y: auto; max-height: 80vh;}
+        .mesa-num { font-size: 4em; color: #27ae60; margin: 10px 0; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>¡Pedido Enviado a Cocina!</h1>
+        <p>El pedido ha sido registrado y enviado a cocina</p>
+        
+        <p>Llevar a la:</p>
+        <div class="mesa-num" th:text="'MESA ' + ${mesa}">MESA 0</div>
+        
+        <br>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <a href="/menu" style="padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px;">Ir al Menú</a>
+            <a href="/mis-pedidos" style="padding: 10px 20px; background: #8e44ad; color: white; text-decoration: none; border-radius: 5px;">Ver Mis Pedidos</a>
+        </div>
+    </div>
+</body>
+</html>
